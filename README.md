@@ -1,187 +1,78 @@
+# AdFlow Pro
 
-# 🚀 AdFlow Pro – Sponsored Listing Marketplace
+A full-stack sponsored ads marketplace with workflow moderation, payment verification, scheduling, ranking, and analytics.
 
-AdFlow Pro is a production-style classified ads platform built using the MERN/Next.js stack. It implements a real-world workflow where ads are submitted, reviewed, verified, and published based on package rules and system automation.
+## Monorepo Structure
 
----
+- `client/` React + Vite + Tailwind app
+- `server/` Express API with MVC-style layering and PostgreSQL
+- `shared/` shared constants (roles/statuses)
 
-## 📌 Project Overview
+## Features
 
-AdFlow Pro is designed to simulate a real business workflow system rather than a simple CRUD app.
+- JWT authentication with RBAC (`client`, `moderator`, `admin`, `super_admin`)
+- End-to-end ad workflow:
+  - Draft → Submitted → Under Review → Payment Pending → Payment Submitted → Payment Verified → Scheduled → Published → Expired
+- Payment verification before publishing
+- Public ads only include Published non-expired records
+- Ranking logic:
+  - `rankScore = (featured ? 50 : 0) + (packageWeight * 10) + freshness + adminBoost`
+- URL-only media handling with YouTube thumbnail extraction and fallback placeholders
+- Cron jobs:
+  - Hourly scheduled publish
+  - Daily expiry
+- Analytics API:
+  - total ads
+  - active ads
+  - revenue by package
+  - approval rate
+- Seed data includes 15 sample ads
 
-### 🔑 Core Features
+## Backend setup
 
-* Only **approved ads** are publicly visible
-* Ads follow a **multi-stage lifecycle** (Draft → Review → Payment → Publish → Expire)
-* **External media URLs only** (no file uploads)
-* **Role-based system** (Client, Moderator, Admin, Super Admin)
-* **Package-based ranking & visibility**
-* Automated **publishing and expiry system**
-
----
-
-## 🧑‍🤝‍🧑 User Roles
-
-| Role        | Responsibilities                         |
-| ----------- | ---------------------------------------- |
-| Client      | Create ads, submit payment, track status |
-| Moderator   | Review ads, approve/reject content       |
-| Admin       | Verify payments, publish ads             |
-| Super Admin | Manage system, packages, categories      |
-
----
-
-## ⚙️ Tech Stack
-
-* **Frontend:** React / Next.js
-* **Backend:** Node.js + Express / API Routes
-* **Database:** Supabase (PostgreSQL)
-* **Authentication:** JWT / Supabase Auth
-* **Deployment:** Vercel
-* **Styling:** Tailwind CSS / Material UI
-
----
-
-## 📊 Key Modules
-
-### 🌐 Public Pages
-
-* Home (Featured Ads, Packages)
-* Explore Ads (Search & Filters)
-* Ad Details Page
-* Category & City Listings
-* Packages Page
-
-### 📋 Dashboards
-
-* Client Dashboard (Manage Ads)
-* Moderator Panel (Review Ads)
-* Admin Dashboard (Verify & Publish)
-* Analytics Dashboard
-
----
-
-## 🔄 Ad Lifecycle Workflow
-
-```id="w2p8qf"
-Draft → Submitted → Under Review → Payment Pending → Payment Submitted 
-→ Payment Verified → Scheduled → Published → Expired → Archived
+```bash
+cp .env.example .env
+cd server
+npm install
+npm run migrate
+npm run seed
+npm run dev
 ```
 
-* Only **Published ads** are visible publicly
-* Ads automatically expire after package duration
+Server runs on `http://localhost:4000`.
 
----
+### Main API endpoints
 
-## 💳 Package System
+- Auth
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+- Client
+  - `POST /api/client/ads`
+  - `PATCH /api/client/ads/:id`
+  - `POST /api/client/payments`
+  - `GET /api/client/dashboard`
+- Moderator
+  - `GET /api/moderator/review-queue`
+  - `PATCH /api/moderator/ads/:id/review`
+- Admin
+  - `GET /api/admin/payment-queue`
+  - `PATCH /api/admin/payments/:id/verify`
+  - `PATCH /api/admin/ads/:id/publish`
+  - `GET /api/admin/analytics`
+- Public
+  - `GET /api/ads`
+  - `GET /api/ads/:id`
 
-| Package  | Duration | Visibility | Priority |
-| -------- | -------- | ---------- | -------- |
-| Basic    | 7 days   | Normal     | Low      |
-| Standard | 15 days  | Category   | Medium   |
-| Premium  | 30 days  | Homepage   | High     |
+## Frontend setup
 
----
-
-## 🧠 Ranking Logic
-
-Ads are ranked using a score system:
-
-```id="k8d9sl"
-rankScore = featured + packageWeight + freshness + adminBoost
-```
-
-* Featured ads appear first
-* Premium ads have higher priority
-* New ads get temporary boost
-
----
-
-## 🗄️ Database Tables (Core)
-
-* users
-* ads
-* packages
-* categories
-* cities
-* payments
-* ad_media
-* notifications
-* audit_logs
-
----
-
-## 🔌 API Endpoints (Examples)
-
-```id="d4t7mf"
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/ads
-POST   /api/client/ads
-GET    /api/moderator/review-queue
-PATCH  /api/admin/payments/:id/verify
-PATCH  /api/admin/ads/:id/publish
-```
-
----
-
-## ⏰ Automation (Cron Jobs)
-
-* Publish scheduled ads
-* Expire outdated ads
-* Send expiry notifications
-* Monitor database health
-
----
-
-## 📈 Analytics
-
-* Total ads & active listings
-* Revenue by package
-* Approval/rejection rates
-* Ads by category & city
-
----
-
-## 🛠️ Installation
-
-```bash id="n5v3ka"
-git clone https://github.com/your-username/adflow-pro.git
-cd adflow-pro
+```bash
+cd client
 npm install
 npm run dev
 ```
 
----
+Client runs on `http://localhost:5173`.
 
-## 🎯 Learning Outcomes
+## Supabase-ready DB layer
 
-* Role-Based Access Control (RBAC)
-* Workflow-based backend logic
-* Database design with PostgreSQL
-* API design & validation
-* Real-world system architecture
-
----
-
-## 🚀 Future Improvements
-
-* Saved ads / bookmarks
-* Spam detection system
-* Email/WhatsApp notifications
-* Seller verification badges
-
----
-
-## 👨‍💻 Author
-
-Your Name
-GitHub: https://github.com/your-username
-
----
-
-## 📄 License
-
-This project is for educational purposes and follows standard open-source practices.
-
----
+`server/src/db/index.js` exposes a modular DB adapter interface so the underlying provider can later be replaced with Supabase/PostgREST-backed implementation while keeping service/controller APIs stable.

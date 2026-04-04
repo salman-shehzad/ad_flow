@@ -23,6 +23,7 @@ function listPublicAds(filters = {}) {
 }
 
 function createDraft(input, ownerId) {
+  getPackage(input.packageId);
   const ad = {
     id: uuid(),
     title: input.title,

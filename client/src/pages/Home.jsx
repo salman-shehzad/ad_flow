@@ -1,0 +1,1 @@
+export default function Home() { return <div className="bg-white p-8 rounded border"><h1 className="text-3xl font-bold">AdFlow Pro</h1><p className="mt-2 text-slate-600">Production-ready sponsored ads workflow marketplace.</p></div>; }

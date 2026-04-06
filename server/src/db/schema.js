@@ -1,0 +1,94 @@
+﻿export const schemaSql = `
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'client',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS cities (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS packages (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  duration_days INTEGER NOT NULL,
+  weight INTEGER NOT NULL DEFAULT 1,
+  price NUMERIC(10, 2) NOT NULL,
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS ads (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category_id INTEGER REFERENCES categories(id),
+  city_id INTEGER REFERENCES cities(id),
+  status TEXT NOT NULL,
+  publish_at TIMESTAMP WITH TIME ZONE,
+  expire_at TIMESTAMP WITH TIME ZONE,
+  package_id INTEGER REFERENCES packages(id),
+  admin_boost INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+  id SERIAL PRIMARY KEY,
+  ad_id INTEGER NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+  amount NUMERIC(10, 2) NOT NULL,
+  transaction_ref TEXT NOT NULL,
+  screenshot_url TEXT,
+  status TEXT NOT NULL DEFAULT 'submitted',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ad_media (
+  id SERIAL PRIMARY KEY,
+  ad_id INTEGER NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+  source_type TEXT NOT NULL,
+  original_url TEXT NOT NULL,
+  thumbnail_url TEXT,
+  validation_status TEXT NOT NULL DEFAULT 'pending'
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  entity_type TEXT NOT NULL,
+  entity_id INTEGER NOT NULL,
+  action TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ad_status_history (
+  id SERIAL PRIMARY KEY,
+  ad_id INTEGER NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+  old_status TEXT,
+  new_status TEXT NOT NULL,
+  changed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  note TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+`;

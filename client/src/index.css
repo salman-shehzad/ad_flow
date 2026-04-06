@@ -1,0 +1,37 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-brand-cream text-slate-800 font-body;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display text-brand-ink;
+  }
+}
+
+@layer components {
+  .container-shell {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .panel {
+    @apply rounded-3xl border border-white/60 bg-white/90 p-6 shadow-card backdrop-blur;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-brand-teal px-5 py-3 font-semibold text-white transition hover:bg-teal-700;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 font-semibold text-slate-700 transition hover:border-brand-teal hover:text-brand-teal;
+  }
+
+  .input {
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-brand-teal;
+  }
+}

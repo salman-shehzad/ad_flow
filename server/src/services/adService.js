@@ -1,12 +1,57 @@
-﻿import { AD_STATUSES, PAYMENT_STATUSES } from "../../../shared/index.js";
+import { AD_STATUSES, PAYMENT_STATUSES } from "../../../shared/index.js";
 import { db } from "../config/db.js";
 import { adsRepository } from "../repositories/adsRepository.js";
 import { auditRepository } from "../repositories/auditRepository.js";
 import { metaRepository } from "../repositories/metaRepository.js";
 import { paymentsRepository } from "../repositories/paymentsRepository.js";
+import { supabase } from "../lib/supabaseClient.js";
 import { normalizeMedia } from "./mediaService.js";
 import { buildStatusSequence } from "./workflowService.js";
 import { ApiError } from "../utils/apiError.js";
+
+export const createAd = async (payload) => {
+  const { data, error } = await supabase.from("ads").insert(payload).select().single();
+
+  if (error) {
+    console.error("Failed to create ad in Supabase", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getAds = async () => {
+  const { data, error } = await supabase.from("ads").select("*").order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch ads from Supabase", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateAd = async (id, updates) => {
+  const { data, error } = await supabase.from("ads").update(updates).eq("id", id).select().single();
+
+  if (error) {
+    console.error("Failed to update ad in Supabase", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const deleteAd = async (id) => {
+  const { error } = await supabase.from("ads").delete().eq("id", id);
+
+  if (error) {
+    console.error("Failed to delete ad in Supabase", error);
+    throw error;
+  }
+
+  return { success: true };
+};
 
 const applyStatusSequence = async (client, ad, statuses, actorUserId, note) => {
   let currentStatus = ad.status;

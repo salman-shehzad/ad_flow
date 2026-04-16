@@ -1,4 +1,4 @@
-﻿import cors from "cors";
+import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -7,6 +7,7 @@ import moderatorRoutes from "./routes/moderatorRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { getDatabaseStatus } from "./lib/dbState.js";
 
 export const app = express();
 
@@ -19,7 +20,26 @@ app.use(
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+  const database = getDatabaseStatus();
+
+  res.status(database.ready ? 200 : 503).json({
+    status: database.ready ? "ok" : "degraded",
+    database,
+  });
+});
+
+app.use((req, res, next) => {
+  const database = getDatabaseStatus();
+
+  if (database.ready) {
+    return next();
+  }
+
+  return res.status(503).json({
+    message:
+      "Database is unavailable. Update DATABASE_URL to a reachable Supabase connection string and try again.",
+    database,
+  });
 });
 
 app.use("/api/auth", authRoutes);

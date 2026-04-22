@@ -4,12 +4,13 @@ import { adsRepository } from "../repositories/adsRepository.js";
 import { auditRepository } from "../repositories/auditRepository.js";
 import { metaRepository } from "../repositories/metaRepository.js";
 import { paymentsRepository } from "../repositories/paymentsRepository.js";
-import { supabase } from "../lib/supabaseClient.js";
+import { getSupabase } from "../lib/supabaseClient.js";
 import { normalizeMedia } from "./mediaService.js";
 import { buildStatusSequence } from "./workflowService.js";
 import { ApiError } from "../utils/apiError.js";
 
 export const createAd = async (payload) => {
+  const supabase = getSupabase();
   const { data, error } = await supabase.from("ads").insert(payload).select().single();
 
   if (error) {
@@ -21,7 +22,11 @@ export const createAd = async (payload) => {
 };
 
 export const getAds = async () => {
-  const { data, error } = await supabase.from("ads").select("*").order("created_at", { ascending: false });
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("ads")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Failed to fetch ads from Supabase", error);
@@ -32,7 +37,13 @@ export const getAds = async () => {
 };
 
 export const updateAd = async (id, updates) => {
-  const { data, error } = await supabase.from("ads").update(updates).eq("id", id).select().single();
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("ads")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
     console.error("Failed to update ad in Supabase", error);
@@ -43,6 +54,7 @@ export const updateAd = async (id, updates) => {
 };
 
 export const deleteAd = async (id) => {
+  const supabase = getSupabase();
   const { error } = await supabase.from("ads").delete().eq("id", id);
 
   if (error) {
@@ -79,7 +91,9 @@ export const adService = {
     }
 
     const publishAt = payload.publishAt ? new Date(payload.publishAt) : new Date();
-    const expireAt = new Date(publishAt.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000);
+    const expireAt = new Date(
+      publishAt.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000,
+    );
     const ad = await adsRepository.create(db, {
       userId,
       title: payload.title,
@@ -139,8 +153,12 @@ export const adService = {
 
     if (payload.publishAt || payload.packageId) {
       const pkg = await metaRepository.findPackageById(db, effectivePackageId);
-      const publishAt = payload.publishAt ? new Date(payload.publishAt) : new Date(ad.publish_at || Date.now());
-      updates.expire_at = new Date(publishAt.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000);
+      const publishAt = payload.publishAt
+        ? new Date(payload.publishAt)
+        : new Date(ad.publish_at || Date.now());
+      updates.expire_at = new Date(
+        publishAt.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000,
+      );
     }
 
     if (Object.keys(updates).length > 0) {
@@ -162,7 +180,13 @@ export const adService = {
 
     if (payload.submit === true) {
       const sequence = buildStatusSequence(refreshedAd.status, AD_STATUSES.SUBMITTED);
-      refreshedAd = await applyStatusSequence(db, refreshedAd, sequence, userId, "Submitted for review");
+      refreshedAd = await applyStatusSequence(
+        db,
+        refreshedAd,
+        sequence,
+        userId,
+        "Submitted for review",
+      );
       await auditRepository.notify(db, {
         userId,
         title: "Ad submitted",
@@ -186,8 +210,12 @@ export const adService = {
       summary: {
         totalAds: ads.length,
         publishedAds: ads.filter((ad) => ad.status === AD_STATUSES.PUBLISHED).length,
-        pendingReview: ads.filter((ad) => [AD_STATUSES.SUBMITTED, AD_STATUSES.UNDER_REVIEW].includes(ad.status)).length,
-        pendingPayments: ads.filter((ad) => [AD_STATUSES.PAYMENT_PENDING, AD_STATUSES.PAYMENT_SUBMITTED].includes(ad.status)).length,
+        pendingReview: ads.filter((ad) =>
+          [AD_STATUSES.SUBMITTED, AD_STATUSES.UNDER_REVIEW].includes(ad.status),
+        ).length,
+        pendingPayments: ads.filter((ad) =>
+          [AD_STATUSES.PAYMENT_PENDING, AD_STATUSES.PAYMENT_SUBMITTED].includes(ad.status),
+        ).length,
       },
       ads,
     };
@@ -216,7 +244,13 @@ export const adService = {
       status: PAYMENT_STATUSES.SUBMITTED,
     });
 
-    await applyStatusSequence(db, ad, [AD_STATUSES.PAYMENT_SUBMITTED], userId, "Payment submitted");
+    await applyStatusSequence(
+      db,
+      ad,
+      [AD_STATUSES.PAYMENT_SUBMITTED],
+      userId,
+      "Payment submitted",
+    );
     await auditRepository.notify(db, {
       userId,
       title: "Payment submitted",

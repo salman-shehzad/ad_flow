@@ -1,11 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 import { env } from "../config/env.js";
+import { ApiError } from "../utils/apiError.js";
 
-const supabaseUrl = env.supabaseUrl;
-const supabaseKey = env.supabaseAnonKey;
+let supabaseInstance = null;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn("Supabase client is missing SUPABASE_URL or SUPABASE_ANON_KEY");
-}
+export const getSupabase = () => {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabaseUrl = env.supabaseUrl;
+  const supabaseKey = env.supabaseAnonKey;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new ApiError(
+      500,
+      "Supabase client is missing SUPABASE_URL or SUPABASE_ANON_KEY",
+    );
+  }
+
+  supabaseInstance = createClient(supabaseUrl, supabaseKey);
+  return supabaseInstance;
+};

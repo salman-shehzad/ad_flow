@@ -1,0 +1,12 @@
+{
+  "name": "adflow-pro",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "build": "npm --workspace client run build"
+  }
+}

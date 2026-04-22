@@ -1,4 +1,4 @@
-﻿# AdFlow Pro
+# AdFlow Pro
 
 AdFlow Pro is a full-stack sponsored ads marketplace with moderation, payment verification, scheduling, analytics, and a strict ad lifecycle.
 
@@ -66,6 +66,29 @@ npm run dev
 ```
 
 The frontend runs on `http://localhost:5173` by default.
+
+## Vercel Deployment
+
+This repo supports deploying both the Vite frontend and the Express API on one Vercel project.
+
+Required Vercel environment variables:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `CLIENT_URL`
+
+Recommended values:
+
+- `CLIENT_URL=https://your-vercel-domain.vercel.app`
+- `VITE_API_URL=/api`
+
+Notes:
+
+- The frontend uses `/api` automatically in production if `VITE_API_URL` is not set.
+- The backend is exposed through the Vercel serverless function at `/api`.
+- Supabase Postgres connections use SSL automatically when `DATABASE_URL` points to `supabase.co`.
 
 ## API Overview
 

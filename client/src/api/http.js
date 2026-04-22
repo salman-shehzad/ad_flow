@@ -1,5 +1,19 @@
 const normalizeApiUrl = (value) => value.replace(/\/+$/, "");
 
+const parseResponseBody = async (response) => {
+  const raw = await response.text();
+
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { message: raw };
+  }
+};
+
 const getApiUrl = () => {
   const configuredUrl = import.meta.env.VITE_API_URL?.trim();
 
@@ -35,9 +49,16 @@ const request = async (path, options = {}) => {
       ...options,
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(data.message || "Request failed");
+      const fallbackMessage =
+        response.status === 404
+          ? "API route was not found on the live deployment."
+          : response.status === 405
+            ? "API route exists, but the HTTP method was rejected."
+            : `Request failed with status ${response.status}`;
+
+      throw new Error(data.message || fallbackMessage);
     }
 
     return data;

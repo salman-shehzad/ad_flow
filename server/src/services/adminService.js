@@ -1,9 +1,10 @@
-﻿import { AD_STATUSES, PAYMENT_STATUSES } from "../../../shared/index.js";
+import { AD_STATUSES, PAYMENT_STATUSES } from "../../../shared/index.js";
 import { db } from "../config/db.js";
 import { adsRepository } from "../repositories/adsRepository.js";
 import { analyticsRepository } from "../repositories/analyticsRepository.js";
 import { auditRepository } from "../repositories/auditRepository.js";
 import { paymentsRepository } from "../repositories/paymentsRepository.js";
+import { usersRepository } from "../repositories/usersRepository.js";
 import { ApiError } from "../utils/apiError.js";
 
 export const adminService = {
@@ -25,11 +26,15 @@ export const adminService = {
       throw new ApiError(400, "Only submitted payments can be reviewed");
     }
 
-    const nextPaymentStatus = payload.approved ? PAYMENT_STATUSES.VERIFIED : PAYMENT_STATUSES.REJECTED;
+    const nextPaymentStatus = payload.approved
+      ? PAYMENT_STATUSES.VERIFIED
+      : PAYMENT_STATUSES.REJECTED;
     await paymentsRepository.update(db, paymentId, { status: nextPaymentStatus });
 
     const ad = await adsRepository.findById(db, payment.ad_id);
-    const nextAdStatus = payload.approved ? AD_STATUSES.PAYMENT_VERIFIED : AD_STATUSES.PAYMENT_PENDING;
+    const nextAdStatus = payload.approved
+      ? AD_STATUSES.PAYMENT_VERIFIED
+      : AD_STATUSES.PAYMENT_PENDING;
     await adsRepository.update(db, ad.id, { status: nextAdStatus });
     await adsRepository.insertStatusHistory(db, {
       adId: ad.id,
@@ -57,7 +62,10 @@ export const adminService = {
     }
 
     if (ad.status !== AD_STATUSES.PAYMENT_VERIFIED) {
-      throw new ApiError(400, "Payment must be verified before scheduling or publishing an ad");
+      throw new ApiError(
+        400,
+        "Payment must be verified before scheduling or publishing an ad",
+      );
     }
 
     const publishAt = payload.publishAt ? new Date(payload.publishAt) : new Date();
@@ -89,5 +97,9 @@ export const adminService = {
 
   async getAnalytics() {
     return analyticsRepository.getSnapshot(db);
+  },
+
+  async getUsers() {
+    return usersRepository.listAll(db);
   },
 };

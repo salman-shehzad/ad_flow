@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "../api/http";
 
 const AuthContext = createContext(null);
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
           id: decoded.id,
           name: decoded.name,
           email: decoded.email,
+          username: decoded.username,
           role: decoded.role,
         };
         setUser(restoredUser);

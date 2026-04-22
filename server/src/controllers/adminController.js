@@ -1,4 +1,4 @@
-﻿import { adminService } from "../services/adminService.js";
+import { adminService } from "../services/adminService.js";
 
 export const adminController = {
   async paymentQueue(_req, res) {
@@ -12,7 +12,11 @@ export const adminController = {
   },
 
   async verifyPayment(req, res) {
-    const payment = await adminService.verifyPayment(req.user.id, Number(req.params.id), req.body);
+    const payment = await adminService.verifyPayment(
+      req.user.id,
+      Number(req.params.id),
+      req.body,
+    );
     res.json(payment);
   },
 
@@ -23,6 +27,11 @@ export const adminController = {
 
   async analytics(_req, res) {
     const data = await adminService.getAnalytics();
+    res.json(data);
+  },
+
+  async users(_req, res) {
+    const data = await adminService.getUsers();
     res.json(data);
   },
 };

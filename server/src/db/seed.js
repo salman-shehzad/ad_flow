@@ -1,5 +1,11 @@
-﻿import bcrypt from "bcryptjs";
-import { AD_STATUSES, PAYMENT_STATUSES, MEDIA_TYPES, ROLES, VALIDATION_STATUSES } from "../../../shared/index.js";
+import bcrypt from "bcryptjs";
+import {
+  AD_STATUSES,
+  PAYMENT_STATUSES,
+  MEDIA_TYPES,
+  ROLES,
+  VALIDATION_STATUSES,
+} from "../../../shared/index.js";
 
 const categories = ["Technology", "Fashion", "Food", "Fitness", "Travel"];
 const cities = ["Karachi", "Lahore", "Islamabad", "Dubai", "Riyadh"];
@@ -24,49 +30,106 @@ const sampleAds = [
   ["Runway Capsule", "Pre-launch waitlist for premium handbags.", 2, 2, 3, AD_STATUSES.PUBLISHED, -5, 20, 3],
   ["Organic Meal Prep", "Weekly family meal plans from nutritionists.", 3, 3, 1, AD_STATUSES.EXPIRED, -20, -5, 1],
   ["Mobility Challenge", "Corporate fitness challenge for HR teams.", 4, 2, 2, AD_STATUSES.REJECTED, 0, 14, 2],
-  ["Coastal Retreat", "Luxury beachfront escapes with transfers.", 5, 5, 3, AD_STATUSES.PUBLISHED, -6, 18, 3]
+  ["Coastal Retreat", "Luxury beachfront escapes with transfers.", 5, 5, 3, AD_STATUSES.PUBLISHED, -6, 18, 3],
 ];
 
-export const seedDatabase = async (db) => {
-  const { rows } = await db.query("SELECT COUNT(*)::int AS count FROM users");
+const userRecords = [
+  {
+    name: "Ayesha Client",
+    email: "client@adflow.pro",
+    username: "client",
+    role: ROLES.CLIENT,
+    password: "Password123!",
+  },
+  {
+    name: "Musa Client",
+    email: "client2@adflow.pro",
+    username: "client2",
+    role: ROLES.CLIENT,
+    password: "Password123!",
+  },
+  {
+    name: "Mariam Moderator",
+    email: "moderator@adflow.pro",
+    username: "moderator",
+    role: ROLES.MODERATOR,
+    password: "Password123!",
+  },
+  {
+    name: "Admin",
+    email: "admin@adflow.pro",
+    username: "admin",
+    role: ROLES.ADMIN,
+    password: "admin@123",
+  },
+  {
+    name: "Sara Super",
+    email: "super@adflow.pro",
+    username: "superadmin",
+    role: ROLES.SUPER_ADMIN,
+    password: "Password123!",
+  },
+];
+
+const upsertUser = async (db, user) => {
+  const passwordHash = await bcrypt.hash(user.password, 10);
+
+  await db.query(
+    `INSERT INTO users (name, email, username, password_hash, role)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (email)
+     DO UPDATE SET
+       name = EXCLUDED.name,
+       username = EXCLUDED.username,
+       password_hash = EXCLUDED.password_hash,
+       role = EXCLUDED.role`,
+    [user.name, user.email, user.username, passwordHash, user.role],
+  );
+};
+
+const ensureLookupData = async (db, table, values) => {
+  for (const value of values) {
+    await db.query(
+      `INSERT INTO ${table} (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`,
+      [value],
+    );
+  }
+};
+
+const ensurePackages = async (db) => {
+  for (const pkg of packages) {
+    await db.query(
+      `INSERT INTO packages (name, duration_days, weight, price, is_featured)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (name)
+       DO UPDATE SET
+         duration_days = EXCLUDED.duration_days,
+         weight = EXCLUDED.weight,
+         price = EXCLUDED.price,
+         is_featured = EXCLUDED.is_featured`,
+      [pkg.name, pkg.duration_days, pkg.weight, pkg.price, pkg.is_featured],
+    );
+  }
+};
+
+const seedSampleAds = async (db) => {
+  const { rows } = await db.query("SELECT COUNT(*)::int AS count FROM ads");
   if (rows[0].count > 0) {
     return;
   }
 
-  const passwordHash = await bcrypt.hash("Password123!", 10);
-
-  const userRecords = [
-    ["Ayesha Client", "client@adflow.pro", ROLES.CLIENT],
-    ["Musa Client", "client2@adflow.pro", ROLES.CLIENT],
-    ["Mariam Moderator", "moderator@adflow.pro", ROLES.MODERATOR],
-    ["Ali Admin", "admin@adflow.pro", ROLES.ADMIN],
-    ["Sara Super", "super@adflow.pro", ROLES.SUPER_ADMIN]
-  ];
-
-  for (const user of userRecords) {
-    await db.query(
-      "INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)",
-      [user[0], user[1], passwordHash, user[2]],
-    );
-  }
-
-  for (const category of categories) {
-    await db.query("INSERT INTO categories (name) VALUES ($1)", [category]);
-  }
-
-  for (const city of cities) {
-    await db.query("INSERT INTO cities (name) VALUES ($1)", [city]);
-  }
-
-  for (const pkg of packages) {
-    await db.query(
-      "INSERT INTO packages (name, duration_days, weight, price, is_featured) VALUES ($1, $2, $3, $4, $5)",
-      [pkg.name, pkg.duration_days, pkg.weight, pkg.price, pkg.is_featured],
-    );
-  }
-
   for (let index = 0; index < sampleAds.length; index += 1) {
-    const [title, description, categoryId, cityId, packageId, status, publishOffset, expireOffset, ownerId] = sampleAds[index];
+    const [
+      title,
+      description,
+      categoryId,
+      cityId,
+      packageId,
+      status,
+      publishOffset,
+      expireOffset,
+      ownerId,
+    ] = sampleAds[index];
     const publishAt = new Date(Date.now() + publishOffset * 24 * 60 * 60 * 1000);
     const expireAt = new Date(Date.now() + expireOffset * 24 * 60 * 60 * 1000);
     const adResult = await db.query(
@@ -77,13 +140,15 @@ export const seedDatabase = async (db) => {
     );
 
     const adId = adResult.rows[0].id;
-    const mediaUrl = index % 4 === 0
-      ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-      : `https://images.unsplash.com/photo-15${12000000 + index}?auto=format&fit=crop&w=1200&q=80`;
+    const mediaUrl =
+      index % 4 === 0
+        ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        : `https://images.unsplash.com/photo-15${12000000 + index}?auto=format&fit=crop&w=1200&q=80`;
     const mediaType = mediaUrl.includes("youtube") ? MEDIA_TYPES.YOUTUBE : MEDIA_TYPES.IMAGE;
-    const thumbnail = mediaType === MEDIA_TYPES.YOUTUBE
-      ? "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
-      : mediaUrl;
+    const thumbnail =
+      mediaType === MEDIA_TYPES.YOUTUBE
+        ? "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+        : mediaUrl;
 
     await db.query(
       "INSERT INTO ad_media (ad_id, source_type, original_url, thumbnail_url, validation_status) VALUES ($1, $2, $3, $4, $5)",
@@ -95,12 +160,39 @@ export const seedDatabase = async (db) => {
       [adId, null, status, "Seeded record"],
     );
 
-    if ([AD_STATUSES.PAYMENT_SUBMITTED, AD_STATUSES.PAYMENT_VERIFIED, AD_STATUSES.SCHEDULED, AD_STATUSES.PUBLISHED].includes(status)) {
-      const paymentStatus = status === AD_STATUSES.PAYMENT_SUBMITTED ? PAYMENT_STATUSES.SUBMITTED : PAYMENT_STATUSES.VERIFIED;
+    if (
+      [
+        AD_STATUSES.PAYMENT_SUBMITTED,
+        AD_STATUSES.PAYMENT_VERIFIED,
+        AD_STATUSES.SCHEDULED,
+        AD_STATUSES.PUBLISHED,
+      ].includes(status)
+    ) {
+      const paymentStatus =
+        status === AD_STATUSES.PAYMENT_SUBMITTED
+          ? PAYMENT_STATUSES.SUBMITTED
+          : PAYMENT_STATUSES.VERIFIED;
       await db.query(
         "INSERT INTO payments (ad_id, amount, transaction_ref, screenshot_url, status) VALUES ($1, $2, $3, $4, $5)",
-        [adId, packages[packageId - 1].price, `TXN-${1000 + adId}`, "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=800&q=80", paymentStatus],
+        [
+          adId,
+          packages[packageId - 1].price,
+          `TXN-${1000 + adId}`,
+          "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=800&q=80",
+          paymentStatus,
+        ],
       );
     }
   }
+};
+
+export const seedDatabase = async (db) => {
+  for (const user of userRecords) {
+    await upsertUser(db, user);
+  }
+
+  await ensureLookupData(db, "categories", categories);
+  await ensureLookupData(db, "cities", cities);
+  await ensurePackages(db);
+  await seedSampleAds(db);
 };

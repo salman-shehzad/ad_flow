@@ -38,4 +38,58 @@ export const usersRepository = {
     );
     return rows;
   },
+
+  async update(db, id, payload) {
+    const fields = [];
+    const values = [];
+
+    if (payload.name !== undefined) {
+      values.push(payload.name);
+      fields.push(`name = $${values.length}`);
+    }
+
+    if (payload.email !== undefined) {
+      values.push(payload.email);
+      fields.push(`email = $${values.length}`);
+    }
+
+    if (payload.username !== undefined) {
+      values.push(payload.username);
+      fields.push(`username = $${values.length}`);
+    }
+
+    if (payload.role !== undefined) {
+      values.push(payload.role);
+      fields.push(`role = $${values.length}`);
+    }
+
+    if (payload.passwordHash !== undefined) {
+      values.push(payload.passwordHash);
+      fields.push(`password_hash = $${values.length}`);
+    }
+
+    if (fields.length === 0) {
+      return this.findById(db, id);
+    }
+
+    values.push(id);
+    const { rows } = await db.query(
+      `UPDATE users
+       SET ${fields.join(", ")}
+       WHERE id = $${values.length}
+       RETURNING id, name, email, username, role, created_at`,
+      values,
+    );
+    return rows[0] || null;
+  },
+
+  async delete(db, id) {
+    const { rows } = await db.query(
+      `DELETE FROM users
+       WHERE id = $1
+       RETURNING id, name, email, username, role, created_at`,
+      [id],
+    );
+    return rows[0] || null;
+  },
 };

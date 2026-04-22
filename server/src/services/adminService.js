@@ -1,4 +1,5 @@
-import { AD_STATUSES, PAYMENT_STATUSES } from "../../../shared/index.js";
+import bcrypt from "bcryptjs";
+import { AD_STATUSES, PAYMENT_STATUSES, ROLES } from "../../../shared/index.js";
 import { db } from "../config/db.js";
 import { adsRepository } from "../repositories/adsRepository.js";
 import { analyticsRepository } from "../repositories/analyticsRepository.js";
@@ -6,6 +7,12 @@ import { auditRepository } from "../repositories/auditRepository.js";
 import { paymentsRepository } from "../repositories/paymentsRepository.js";
 import { usersRepository } from "../repositories/usersRepository.js";
 import { ApiError } from "../utils/apiError.js";
+
+const assertSuperAdmin = (actor) => {
+  if (actor?.role !== ROLES.SUPER_ADMIN) {
+    throw new ApiError(403, "Only super admins can manage users");
+  }
+};
 
 export const adminService = {
   async getPaymentQueue() {
@@ -101,5 +108,72 @@ export const adminService = {
 
   async getUsers() {
     return usersRepository.listAll(db);
+  },
+
+  async updateUser(actor, userId, payload) {
+    assertSuperAdmin(actor);
+
+    const existingUser = await usersRepository.findById(db, userId);
+    if (!existingUser) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (existingUser.id === actor.id && payload.role && payload.role !== ROLES.SUPER_ADMIN) {
+      throw new ApiError(400, "Super admin cannot remove their own super admin role");
+    }
+
+    const updates = {
+      name: payload.name,
+      email: payload.email,
+      username:
+        payload.username === "" ? null : payload.username,
+      role: payload.role,
+    };
+
+    if (payload.password) {
+      updates.passwordHash = await bcrypt.hash(payload.password, 10);
+    }
+
+    const user = await usersRepository.update(db, userId, updates);
+
+    await auditRepository.create(db, {
+      actorUserId: actor.id,
+      entityType: "user",
+      entityId: userId,
+      action: "user_updated",
+      metadata: {
+        updatedFields: Object.keys(payload),
+      },
+    });
+
+    return user;
+  },
+
+  async deleteUser(actor, userId) {
+    assertSuperAdmin(actor);
+
+    if (actor.id === userId) {
+      throw new ApiError(400, "Super admin cannot delete their own account");
+    }
+
+    const existingUser = await usersRepository.findById(db, userId);
+    if (!existingUser) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const deleted = await usersRepository.delete(db, userId);
+
+    await auditRepository.create(db, {
+      actorUserId: actor.id,
+      entityType: "user",
+      entityId: userId,
+      action: "user_deleted",
+      metadata: {
+        email: existingUser.email,
+        role: existingUser.role,
+      },
+    });
+
+    return deleted;
   },
 };

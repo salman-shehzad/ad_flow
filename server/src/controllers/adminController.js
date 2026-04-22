@@ -34,4 +34,18 @@ export const adminController = {
     const data = await adminService.getUsers();
     res.json(data);
   },
+
+  async updateUser(req, res) {
+    const data = await adminService.updateUser(
+      req.user,
+      Number(req.params.id),
+      req.body,
+    );
+    res.json(data);
+  },
+
+  async deleteUser(req, res) {
+    const data = await adminService.deleteUser(req.user, Number(req.params.id));
+    res.json(data);
+  },
 };

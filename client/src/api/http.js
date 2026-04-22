@@ -21,7 +21,6 @@ const getApiUrl = () => {
     const isLocalhostUrl =
       configuredUrl.includes("localhost") || configuredUrl.includes("127.0.0.1");
 
-    // Protect production deployments from stale localhost env vars on Vercel.
     if (!(import.meta.env.PROD && isLocalhostUrl)) {
       return normalizeApiUrl(configuredUrl);
     }
@@ -64,7 +63,9 @@ const request = async (path, options = {}) => {
     return data;
   } catch (error) {
     if (error instanceof Error && error.message === "Failed to fetch") {
-      throw new Error("Could not reach the live API. Check VITE_API_URL and Vercel deployment settings.");
+      throw new Error(
+        "Could not reach the live API. Check VITE_API_URL and Vercel deployment settings.",
+      );
     }
 
     throw error;
@@ -77,4 +78,5 @@ export const api = {
     request(path, { method: "POST", body: JSON.stringify(body) }),
   patch: (path, body) =>
     request(path, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (path) => request(path, { method: "DELETE" }),
 };

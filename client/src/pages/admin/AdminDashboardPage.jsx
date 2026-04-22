@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/http";
 import { StatCard } from "../../components/StatCard";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { useAuth } from "../../context/AuthContext";
 
 export const AdminDashboardPage = () => {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === "super_admin";
   const [analytics, setAnalytics] = useState({
     totalAds: 0,
     activeAds: 0,
@@ -15,6 +18,7 @@ export const AdminDashboardPage = () => {
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState({});
   const [publishForms, setPublishForms] = useState({});
+  const [userForms, setUserForms] = useState({});
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -28,6 +32,19 @@ export const AdminDashboardPage = () => {
     setPayments(paymentsData);
     setReadyAds(readyAdsData);
     setUsers(usersData);
+    setUserForms((current) => {
+      const next = { ...current };
+      for (const account of usersData) {
+        next[account.id] = {
+          name: current[account.id]?.name ?? account.name,
+          email: current[account.id]?.email ?? account.email,
+          username: current[account.id]?.username ?? account.username ?? "",
+          role: current[account.id]?.role ?? account.role,
+          password: "",
+        };
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -70,6 +87,34 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  const updateUser = async (accountId) => {
+    setError("");
+    try {
+      const form = userForms[accountId] || {};
+      const payload = {
+        name: form.name,
+        email: form.email,
+        username: form.username,
+        role: form.role,
+        ...(form.password ? { password: form.password } : {}),
+      };
+      await api.patch(`/admin/users/${accountId}`, payload);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const deleteManagedUser = async (accountId) => {
+    setError("");
+    try {
+      await api.delete(`/admin/users/${accountId}`);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
@@ -86,40 +131,128 @@ export const AdminDashboardPage = () => {
           <div>
             <h2 className="text-2xl font-bold">Users directory</h2>
             <p className="text-sm text-slate-500">
-              All platform users visible to admin accounts.
+              {isSuperAdmin
+                ? "Super admins can update users, reset passwords, and delete accounts."
+                : "Admins can view all platform users. Passwords cannot be displayed because they are securely hashed."}
             </p>
           </div>
           <div className="rounded-full bg-brand-mist px-4 py-2 text-sm font-semibold text-brand-teal">
             {users.length} users
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead>
-              <tr className="text-left text-slate-500">
-                <th className="py-3 pr-4 font-semibold">Name</th>
-                <th className="py-3 pr-4 font-semibold">Username</th>
-                <th className="py-3 pr-4 font-semibold">Email</th>
-                <th className="py-3 pr-4 font-semibold">Role</th>
-                <th className="py-3 font-semibold">Joined</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td className="py-3 pr-4 font-semibold text-brand-ink">{user.name}</td>
-                  <td className="py-3 pr-4 text-slate-600">{user.username || "-"}</td>
-                  <td className="py-3 pr-4 text-slate-600">{user.email}</td>
-                  <td className="py-3 pr-4">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="py-3 text-slate-600">{formatDate(user.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {users.map((account) => (
+            <div key={account.id} className="rounded-3xl border border-slate-200 p-5">
+              <div className="grid gap-4 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto]">
+                <input
+                  className="input"
+                  disabled={!isSuperAdmin}
+                  value={userForms[account.id]?.name || account.name}
+                  onChange={(e) =>
+                    setUserForms((current) => ({
+                      ...current,
+                      [account.id]: {
+                        ...(current[account.id] || {}),
+                        name: e.target.value,
+                      },
+                    }))
+                  }
+                />
+                <input
+                  className="input"
+                  disabled={!isSuperAdmin}
+                  value={userForms[account.id]?.email || account.email}
+                  onChange={(e) =>
+                    setUserForms((current) => ({
+                      ...current,
+                      [account.id]: {
+                        ...(current[account.id] || {}),
+                        email: e.target.value,
+                      },
+                    }))
+                  }
+                />
+                <input
+                  className="input"
+                  disabled={!isSuperAdmin}
+                  placeholder="Username"
+                  value={userForms[account.id]?.username ?? account.username ?? ""}
+                  onChange={(e) =>
+                    setUserForms((current) => ({
+                      ...current,
+                      [account.id]: {
+                        ...(current[account.id] || {}),
+                        username: e.target.value,
+                      },
+                    }))
+                  }
+                />
+                <select
+                  className="input"
+                  disabled={!isSuperAdmin}
+                  value={userForms[account.id]?.role || account.role}
+                  onChange={(e) =>
+                    setUserForms((current) => ({
+                      ...current,
+                      [account.id]: {
+                        ...(current[account.id] || {}),
+                        role: e.target.value,
+                      },
+                    }))
+                  }
+                >
+                  <option value="client">client</option>
+                  <option value="moderator">moderator</option>
+                  <option value="admin">admin</option>
+                  <option value="super_admin">super_admin</option>
+                </select>
+                <div className="text-sm text-slate-500">
+                  Joined {formatDate(account.created_at)}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_auto_auto]">
+                <input
+                  className="input"
+                  disabled={!isSuperAdmin}
+                  type="password"
+                  placeholder={
+                    isSuperAdmin
+                      ? "Set a new password (cannot view old password)"
+                      : "Stored passwords are not viewable"
+                  }
+                  value={userForms[account.id]?.password || ""}
+                  onChange={(e) =>
+                    setUserForms((current) => ({
+                      ...current,
+                      [account.id]: {
+                        ...(current[account.id] || {}),
+                        password: e.target.value,
+                      },
+                    }))
+                  }
+                />
+                {isSuperAdmin ? (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => updateUser(account.id)}
+                  >
+                    Update user
+                  </button>
+                ) : null}
+                {isSuperAdmin ? (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => deleteManagedUser(account.id)}
+                    disabled={account.id === currentUser?.id}
+                  >
+                    Delete user
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -151,7 +284,7 @@ export const AdminDashboardPage = () => {
                 <div>
                   <h3 className="text-xl font-bold">{payment.ad_title}</h3>
                   <p className="text-sm text-slate-500">
-                    {payment.owner_name} • {payment.package_name}
+                    {payment.owner_name} - {payment.package_name}
                   </p>
                   <a
                     className="mt-2 inline-block text-sm font-semibold text-brand-teal"
@@ -209,7 +342,7 @@ export const AdminDashboardPage = () => {
                 <div>
                   <h3 className="text-xl font-bold">{ad.title}</h3>
                   <p className="text-sm text-slate-500">
-                    {ad.owner_name} • {ad.package_name}
+                    {ad.owner_name} - {ad.package_name}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
                     Current publish target: {formatDate(ad.publish_at)}

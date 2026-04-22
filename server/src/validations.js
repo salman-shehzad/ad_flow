@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { ROLES } from "../../shared/index.js";
 
 export const registerSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
@@ -54,6 +55,14 @@ export const adminPublishSchema = Joi.object({
   adminBoost: Joi.number().integer().min(0).max(100).optional(),
   note: Joi.string().allow("", null),
 });
+
+export const manageUserSchema = Joi.object({
+  name: Joi.string().min(2).max(100),
+  email: Joi.string().email(),
+  username: Joi.string().min(2).max(50).allow("", null),
+  role: Joi.string().valid(...Object.values(ROLES)),
+  password: Joi.string().min(8),
+}).min(1);
 
 export const publicAdsQuerySchema = Joi.object({
   search: Joi.string().allow(""),

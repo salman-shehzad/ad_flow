@@ -1,14 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
-  "functions": {
-    "api/index.js": {
-      "runtime": "nodejs20.x"
-    },
-    "api/[...path].js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/",

@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
-  const [form, setForm] = useState({ email: "client@adflow.pro", password: "Password123!" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
   const handleSubmit = async (event) => {

@@ -213,9 +213,7 @@ export const adService = {
         pendingReview: ads.filter((ad) =>
           [AD_STATUSES.SUBMITTED, AD_STATUSES.UNDER_REVIEW].includes(ad.status),
         ).length,
-        pendingPayments: ads.filter((ad) =>
-          [AD_STATUSES.PAYMENT_PENDING, AD_STATUSES.PAYMENT_SUBMITTED].includes(ad.status),
-        ).length,
+        scheduledAds: ads.filter((ad) => ad.status === AD_STATUSES.SCHEDULED).length,
       },
       ads,
     };

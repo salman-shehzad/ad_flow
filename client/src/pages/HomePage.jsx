@@ -18,10 +18,10 @@ export const HomePage = () => {
             Workflow-first sponsored ads marketplace
           </span>
           <h1 className="max-w-3xl text-5xl font-extrabold leading-tight sm:text-6xl">
-            Launch, moderate, verify, schedule, and rank ads with production-ready control.
+            Launch, moderate, schedule, and rank ads with production-ready control.
           </h1>
           <p className="max-w-2xl text-lg text-slate-600">
-            AdFlow Pro gives clients a guided ad pipeline while moderators and admins control quality, payment proof, publishing windows, and marketplace visibility.
+            AdFlow Pro gives clients a guided ad pipeline while moderators and admins control quality, publishing windows, and marketplace visibility.
           </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/explore" className="btn-primary">Explore live ads</Link>
@@ -32,7 +32,7 @@ export const HomePage = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               ["Draft to Expired", "Complete lifecycle control"],
-              ["Payment verification", "Proof-first publishing guardrail"],
+              ["Moderator approval", "Ads go live after review"],
               ["Role-based access", "Client, moderator, admin, super admin"],
               ["Ranking engine", "Featured + freshness + admin boost"],
             ].map(([title, copy]) => (

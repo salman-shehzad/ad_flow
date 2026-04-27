@@ -39,7 +39,7 @@ export const ModeratorPanelPage = () => {
       </div>
       <div className="panel">
         <h1 className="text-3xl font-bold">Moderator review queue</h1>
-        <p className="mt-2 text-sm text-slate-500">Approve ads into payment flow or reject them with notes for the client.</p>
+        <p className="mt-2 text-sm text-slate-500">Approve ads to publish them or reject them with notes for the client.</p>
       </div>
       {ads.length === 0 ? <div className="panel text-slate-500">No ads are waiting for moderation right now.</div> : null}
       <div className="grid gap-6 xl:grid-cols-2">

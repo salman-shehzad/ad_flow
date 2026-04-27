@@ -20,7 +20,12 @@ export const moderationService = {
       throw new ApiError(400, "Ad is not in the moderation queue");
     }
 
-    const statuses = buildStatusSequence(ad.status, payload.approved ? AD_STATUSES.PAYMENT_PENDING : AD_STATUSES.REJECTED);
+    const publishAt = ad.publish_at ? new Date(ad.publish_at) : new Date();
+    const nextApprovedStatus =
+      publishAt > new Date() ? AD_STATUSES.SCHEDULED : AD_STATUSES.PUBLISHED;
+    const statuses = payload.approved
+      ? [AD_STATUSES.UNDER_REVIEW, nextApprovedStatus]
+      : buildStatusSequence(ad.status, AD_STATUSES.REJECTED);
     let currentStatus = ad.status;
     for (const status of statuses) {
       await adsRepository.update(db, adId, { status });
@@ -44,9 +49,11 @@ export const moderationService = {
 
     await auditRepository.notify(db, {
       userId: ad.user_id,
-      title: payload.approved ? "Ad approved for payment" : "Ad rejected",
+      title: payload.approved ? "Ad approved" : "Ad rejected",
       message: payload.approved
-        ? `${ad.title} passed moderation and is ready for payment.`
+        ? nextApprovedStatus === AD_STATUSES.PUBLISHED
+          ? `${ad.title} passed moderation and is now live on Explore.`
+          : `${ad.title} passed moderation and is scheduled for its publish time.`
         : `${ad.title} was rejected. ${payload.note || "Please revise and resubmit."}`,
     });
 

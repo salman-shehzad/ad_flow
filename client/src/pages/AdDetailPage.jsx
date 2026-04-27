@@ -1,8 +1,8 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { DEFAULT_PLACEHOLDER_IMAGE } from "@shared/index";
 import { api } from "../api/http";
 import { StatusBadge } from "../components/StatusBadge";
+import { getAdImage } from "../utils/adImage";
 import { formatCurrency, formatDate } from "../utils/formatters";
 
 export const AdDetailPage = () => {
@@ -22,12 +22,12 @@ export const AdDetailPage = () => {
     return <div className="container-shell"><div className="panel">Loading ad...</div></div>;
   }
 
-  const hero = ad.media?.[0]?.thumbnail_url || DEFAULT_PLACEHOLDER_IMAGE;
+  const hero = getAdImage(ad);
 
   return (
     <div className="container-shell grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="panel overflow-hidden p-0">
-        <img src={hero} alt={ad.title} className="h-80 w-full object-cover" onError={(e) => { e.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE; }} />
+        <img src={hero} alt={ad.title} className="h-80 w-full object-cover" onError={(e) => { e.currentTarget.src = getAdImage({ id: ad.id }); }} />
         <div className="space-y-5 p-8">
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={ad.status} />

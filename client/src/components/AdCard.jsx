@@ -1,10 +1,10 @@
-﻿import { Link } from "react-router-dom";
-import { DEFAULT_PLACEHOLDER_IMAGE } from "@shared/index";
+import { Link } from "react-router-dom";
+import { getAdImage } from "../utils/adImage";
 import { StatusBadge } from "./StatusBadge";
 import { formatCurrency, formatDate } from "../utils/formatters";
 
 export const AdCard = ({ ad, showStatus = false }) => {
-  const image = ad.media?.[0]?.thumbnail_url || DEFAULT_PLACEHOLDER_IMAGE;
+  const image = getAdImage(ad);
 
   return (
     <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1">
@@ -13,7 +13,7 @@ export const AdCard = ({ ad, showStatus = false }) => {
         alt={ad.title}
         className="h-52 w-full object-cover"
         onError={(event) => {
-          event.currentTarget.src = DEFAULT_PLACEHOLDER_IMAGE;
+          event.currentTarget.src = getAdImage({ id: ad.id });
         }}
       />
       <div className="space-y-4 p-5">

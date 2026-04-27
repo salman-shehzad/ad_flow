@@ -22,7 +22,6 @@ export const ClientDashboardPage = () => {
   const [packages, setPackages] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
-  const [paymentForms, setPaymentForms] = useState({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -104,28 +103,13 @@ export const ClientDashboardPage = () => {
     }
   };
 
-  const handlePaymentSubmit = async (adId) => {
-    setError("");
-    try {
-      const payload = paymentForms[adId] || {};
-      await api.post("/client/payments", {
-        adId,
-        transactionRef: payload.transactionRef,
-        screenshotUrl: payload.screenshotUrl,
-      });
-      await load();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard label="Total ads" value={dashboard.summary.totalAds || 0} />
         <StatCard label="Published" value={dashboard.summary.publishedAds || 0} />
         <StatCard label="Pending review" value={dashboard.summary.pendingReview || 0} />
-        <StatCard label="Pending payments" value={dashboard.summary.pendingPayments || 0} />
+        <StatCard label="Scheduled" value={dashboard.summary.scheduledAds || 0} />
       </div>
 
       <section className="panel space-y-5">
@@ -171,7 +155,7 @@ export const ClientDashboardPage = () => {
             <div key={ad.id} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <AdCard ad={ad} showStatus />
               <p className="text-sm text-slate-500">
-                Workflow state: {ad.status}. Payment must be verified before this ad can be scheduled or published.
+                Workflow state: {ad.status}. Approved ads are published right away or scheduled for their selected publish time.
               </p>
               <div className="flex flex-wrap gap-3">
                 {editableStatuses.includes(ad.status) ? (
@@ -183,25 +167,6 @@ export const ClientDashboardPage = () => {
                   <button type="button" className="btn-primary" onClick={() => handleSubmitForReview(ad.id)}>
                     Submit for review
                   </button>
-                ) : null}
-                {ad.status === AD_STATUSES.PAYMENT_PENDING ? (
-                  <div className="grid w-full gap-3 md:grid-cols-2">
-                    <input
-                      className="input"
-                      placeholder="Transaction reference"
-                      value={paymentForms[ad.id]?.transactionRef || ""}
-                      onChange={(e) => setPaymentForms((current) => ({ ...current, [ad.id]: { ...(current[ad.id] || {}), transactionRef: e.target.value } }))}
-                    />
-                    <input
-                      className="input"
-                      placeholder="Screenshot URL"
-                      value={paymentForms[ad.id]?.screenshotUrl || ""}
-                      onChange={(e) => setPaymentForms((current) => ({ ...current, [ad.id]: { ...(current[ad.id] || {}), screenshotUrl: e.target.value } }))}
-                    />
-                    <button type="button" className="btn-primary md:col-span-2 md:w-fit" onClick={() => handlePaymentSubmit(ad.id)}>
-                      Submit payment proof
-                    </button>
-                  </div>
                 ) : null}
               </div>
             </div>

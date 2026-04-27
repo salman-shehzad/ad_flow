@@ -1,9 +1,11 @@
-﻿import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { DASHBOARD_ROUTE_BY_ROLE } from "@shared/index";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 export const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   return (
@@ -17,6 +19,15 @@ export const Navbar = () => {
           <NavLink to="/packages" className="text-sm font-semibold text-slate-600 hover:text-brand-teal">Packages</NavLink>
         </nav>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="btn-secondary px-4 text-xl leading-none"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
           {isAuthenticated ? (
             <>
               <button

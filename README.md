@@ -2,7 +2,7 @@
 
 AdFlow Pro is a full-stack sponsored ads marketplace with moderation, payment verification, scheduling, analytics, and a strict ad lifecycle.
 
-https://ad-flow-meow36qd5-salmanshehzad780-1553s-projects.vercel.app/
+https://ad-flow-22ty6w6l3-salmanshehzad780-1553s-projects.vercel.app/
 
 ## Stack
 
